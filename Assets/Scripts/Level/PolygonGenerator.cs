@@ -21,6 +21,11 @@ public class PolygonGenerator : MonoBehaviour
     //After made, it'll be saved in this mesh
     private Mesh mesh;
 
+    private float tUnit = 0.25f; // Fraction of space 1 tile takes up out of the width
+    private Vector2 tStone = new Vector2(0, 0);
+    private Vector2 tGrass = new Vector2(0, 1);
+
+
     private void Start()
     {
         //Using "mesh" to access the mesh filter
@@ -50,9 +55,15 @@ public class PolygonGenerator : MonoBehaviour
         newTriangles.Add(2);
         newTriangles.Add(3);
 
+        newUV.Add(new Vector2(tUnit * tStone.x, tUnit * tStone.y + tUnit));
+        newUV.Add(new Vector2(tUnit * tStone.x + tUnit, tUnit * tStone.y + tUnit));
+        newUV.Add(new Vector2(tUnit * tStone.x + tUnit, tUnit * tStone.y));
+        newUV.Add(new Vector2(tUnit * tStone.x, tUnit * tStone.y));
+
         mesh.Clear(); //Clears existing mesh
         mesh.vertices = newVertices.ToArray(); //.ToArray(); //Set mesh vertices to vertices created
         mesh.triangles = newTriangles.ToArray(); //Set mesh triangle to triangles created
+        mesh.uv = newUV.ToArray();
         mesh.Optimize();
         mesh.RecalculateNormals();
     }
