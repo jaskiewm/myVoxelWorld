@@ -22,7 +22,7 @@ public class WorldManager : MonoBehaviour
             if (_instance != this)
                 Destroy(this);
         }
-        else //If our _instance is empty, the assign it to this
+        else //If our _instance is empty, the assign it to "this"
         {
             _instance = this;
         }
@@ -56,8 +56,8 @@ public class WorldManager : MonoBehaviour
         get
         {
             if (_instance == null) //checking if private instance is null
-                _instance = FindObjectOfType<WorldManager>(); //not efficient, but only has to run once
-            return Instance;
+                _instance = FindFirstObjectByType<WorldManager>(); //not efficient, but only has to run once
+            return _instance;
         }
     }
 
