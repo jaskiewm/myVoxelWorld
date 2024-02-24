@@ -9,9 +9,24 @@ public class WorldManager : MonoBehaviour
     public Material worldMaterial;
     private Container container;
 
+    public VoxelColour[] worldColours;
+
     // Initalize
     void Start()
     {
+        //Used for transitioning scenes. This lets us only have one manager at a time
+        //_instance is the private static reference (at bottome of page)
+        //Note that "this" is the Public Voxel [Vector 3] in the Container script
+        if(_instance != null)
+        {
+            if (_instance != this)
+                Destroy(this);
+        }
+        else //If our _instance is empty, the assign it to this
+        {
+            _instance = this;
+        }
+
         GameObject cont = new GameObject("Container");
         cont.transform.parent = transform; //transform is same as world manager object
         container = cont.AddComponent<Container>(); //add containe
@@ -32,4 +47,18 @@ public class WorldManager : MonoBehaviour
         container.GenerateMesh();
         container.UploadMesh();
     }
+
+    // This section of code lets us have access to the world and object without having a reference (It is a singleton)
+
+    private static WorldManager _instance; //set up private static reference to our world manager
+    public static WorldManager Instance //set up public static reference to our world manager
+    {
+        get
+        {
+            if (_instance == null) //checking if private instance is null
+                _instance = FindObjectOfType<WorldManager>(); //not efficient, but only has to run once
+            return Instance;
+        }
+    }
+
 }

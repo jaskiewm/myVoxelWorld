@@ -4,7 +4,11 @@ using UnityEngine;
 
 [System.Serializable]
 
-public class VoxelColour : MonoBehaviour
+public class VoxelColour
 {
- 
+    public Color colour;
+    public float metallic;
+    public float smoothness;
+
+
 }

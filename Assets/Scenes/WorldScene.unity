@@ -150,6 +150,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   worldMaterial: {fileID: 2100000, guid: 32ffafc34fdf50b4dbcb814c63787d59, type: 2}
+  worldColours:
+  - colour: {r: 0.18396229, g: 0.5964688, b: 1, a: 0}
+    metallic: 1
+    smoothness: 0.75
 --- !u!4 &560439788
 Transform:
   m_ObjectHideFlags: 0
