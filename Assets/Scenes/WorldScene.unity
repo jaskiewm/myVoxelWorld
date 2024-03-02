@@ -130,6 +130,7 @@ GameObject:
   m_Component:
   - component: {fileID: 560439788}
   - component: {fileID: 560439787}
+  - component: {fileID: 560439789}
   m_Layer: 0
   m_Name: WorldManager
   m_TagString: Untagged
@@ -150,6 +151,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   worldMaterial: {fileID: 2100000, guid: 32ffafc34fdf50b4dbcb814c63787d59, type: 2}
+  container: {fileID: 0}
+  worldSettings:
+    containerSize: 64
+    maxHeight: 128
+  worldColours:
+  - colour: {r: 0, g: 0.3490566, b: 0.018491335, a: 0}
+    metallic: 0.2
+    smoothness: 0.8
+  - colour: {r: 0.41568628, g: 0.21178679, b: 0, a: 0}
+    metallic: 0.6
+    smoothness: 0.2
 --- !u!4 &560439788
 Transform:
   m_ObjectHideFlags: 0
@@ -165,6 +177,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &560439789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 560439786}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6ef14fa8acb0c647bf6ff2fcebd8450, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  noiseShader: {fileID: 7200000, guid: 667cc07bde542f7459af06c4aa4371b9, type: 3}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0

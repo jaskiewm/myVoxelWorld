@@ -4,7 +4,9 @@ using UnityEngine;
 
 public struct voxel
 {
-    public byte ID; //Byte for space savings
+    //Was byte for space savings, but we can't pass byte to compute shader
+    //Now we have 4 bytes instead of 1 :(
+    public int ID; 
 
     public bool isSolid
     {

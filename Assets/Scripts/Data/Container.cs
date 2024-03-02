@@ -10,7 +10,7 @@ public class Container : MonoBehaviour
 {
     public Vector3 containerPosition;
     private MeshData meshData = new MeshData();
-    Dictionary<Vector3, voxel> data;
+    public NoiseBuffer data;
 
     private MeshFilter meshFilter;
     private MeshRenderer meshRenderer;
@@ -21,7 +21,7 @@ public class Container : MonoBehaviour
     public void Initialize(Material mat, Vector3 position)
     {
         ConfigureComponents();
-        data = new Dictionary<Vector3, voxel>(); // Dictionary better for data allocation
+        data = ComputeManager.Instance.GetNoiseBuffer();
         meshRenderer.sharedMaterial = mat;
         containerPosition = position;
     }
@@ -29,7 +29,7 @@ public class Container : MonoBehaviour
 
     public void ClearData()
     {
-        data.Clear();
+        ComputeManager.Instance.ClearAndRequeueBuffer(data);
     }
 
     //Gets components from the game object for all mesh variables
@@ -40,51 +40,74 @@ public class Container : MonoBehaviour
         meshCollider = GetComponent<MeshCollider>();
     }
 
+    public void RenderMesh()
+    {
+        meshData.ClearData(); //Last time we're running on main thread
+        GenerateMesh();
+        UploadMesh();
+    }
+
     public void GenerateMesh()
     {
-        //Clears all data in the struct
-        meshData.ClearData(); 
-
         //single block to draw a cube (position of 8,8,8)
         Vector3 blockPos = new Vector3(8, 8, 8);
         voxel block = new voxel() { ID = 1 }; //ID 0 = air, 1 = block
 
+        //Variables are set outside the for loop so you don't have to reallocate variables
         int counter = 0;
         Vector3[] faceVertices = new Vector3[4];
         Vector2[] faceUVs = new Vector2[4];
 
-        foreach(KeyValuePair<Vector3, voxel> kvp in data) {
-            if (kvp.Value.ID == 0)
-                continue;
+        //Declared appearance variables for the cubes
+        VoxelColour voxelColour;
+        Color voxelColorAlpha;
+        Vector2 voxelSmoothness;
 
-            blockPos = kvp.Key;
-            block = kvp.Value;
-
-            //Iterate over each face of the cube
-            //This does not check the face of the cube
-            for (int i =0; i<6; i++)
-            {
-                if (this[blockPos + voxelFaceChecks[i]].isSolid) // Checks if block is solid or air, if solid it continues
-                    continue;
-                    //Draw this face
-
-                //Collect appropriate vertices from default vertices and add the block position
-
-                for (int j = 0; j < 4; j++)
+        for (int x =1; x< WorldManager.WorldSettings.containerSize + 1; x++)
+            for(int y = 0; y < WorldManager.WorldSettings.maxHeight; y++)
+                for (int z = 1; z < WorldManager.WorldSettings.containerSize + 1; z++)
                 {
-                    faceVertices[j] = voxelVertices[voxelVerticeIndex[i, j]] + blockPos; //i == face, j == vertice
-                    faceUVs[j] = voxelUVs[j]; //map UVs to each quad
-                }
-                for (int j = 0; j < 6; j++) //iterate through 6 points for the triangles
-                {
-                    meshData.vertices.Add(faceVertices[voxelTriangles[i, j]]);
-                    meshData.UVs.Add(faceUVs[voxelTriangles[i, j]]);
+                    blockPos = new Vector3(x, y, z);
+                    block = this[blockPos];
+                    //Only check on solid blocks
+                    if (!block.isSolid)
+                        continue;
+           
+                    //assigns voxel colour based on the array in World Manager. block.ID = 0 is air so we need -1
+                    voxelColour = WorldManager.Instance.worldColours[block.ID - 1];
+                    voxelColorAlpha = voxelColour.colour;
+                    voxelColorAlpha.a = 1;
+                    voxelSmoothness = new Vector2(voxelColour.metallic, voxelColour.smoothness);
 
-                    meshData.triangles.Add(counter++); //No shared vertice (36 for a cube) so counting up to 6 (6*6)
-                }
+                    //Iterate over each face of the cube
+                    //This does not check the face of the cube
+                    for (int i =0; i<6; i++)
+                    {
+                        if (checkVoxelIsSolid(blockPos + voxelFaceChecks[i])) // Checks if block is solid or air, if solid it continues
+                            continue;
+                        //Draw this face
 
-            }
-        }
+                        //Collect appropriate vertices from default vertices and add the block position
+
+                        for (int j = 0; j < 4; j++)
+                        {
+                            faceVertices[j] = voxelVertices[voxelVerticeIndex[i, j]] + blockPos; //i == face, j == vertice
+                            faceUVs[j] = voxelUVs[j]; //map UVs to each quad
+                        }
+                        for (int j = 0; j < 6; j++) //iterate through 6 points for the triangles
+                        {
+                            meshData.vertices.Add(faceVertices[voxelTriangles[i, j]]);
+                            meshData.UVs.Add(faceUVs[voxelTriangles[i, j]]);
+
+                            meshData.colours.Add(voxelColorAlpha);
+                            meshData.UVs2.Add(voxelSmoothness);
+
+                            meshData.triangles.Add(counter++); //No shared vertice (36 for a cube) so counting up to 6 (6*6)
+                        }
+           
+
+                    }
+                }
     }
 
     public void UploadMesh()
@@ -103,25 +126,26 @@ public class Container : MonoBehaviour
         }
     }
 
+    //Checks if point is within the bounds so a face isn't drawn (Edge of chunk, no face is drawn)
+    public bool checkVoxelIsSolid(Vector3 point)
+    {
+        if (point.y < 0 || (point.x > WorldManager.WorldSettings.containerSize + 2) || (point.z > WorldManager.WorldSettings.containerSize + 2))
+            return true;
+        else
+            return this[point].isSolid;
+    }
+
     public voxel this[Vector3 index]
     {
         get
         {
-            if (data.ContainsKey(index)) //check if data contains index
-                return data[index];
-            else
-                return emptyVoxel; //static empty voxel with ID set to 0 (air)
+            return data[index];
         }
         set
         {
-            if (data.ContainsKey(index))
                 data[index] = value;
-            else
-                data.Add(index, value);
         }
     }
-
-    public static voxel emptyVoxel = new voxel() { ID = 0 }; //Air as ID = 0
 
     public struct MeshData
     {
@@ -131,10 +155,13 @@ public class Container : MonoBehaviour
         public List<Vector3> vertices;
 
         //The UV list tells Unity how the texture is aligned on each polygon
-        public List<Vector2> UVs;
+        public List<Vector2> UVs; //Used for textures
+        public List<Vector2> UVs2; //Used for smoothness
 
         // The triangles tell Unity how to build each section of the mesh by joining vertices
         public List<int> triangles;
+
+        public List<Color> colours;
 
         public bool Initialized; 
 
@@ -148,12 +175,17 @@ public class Container : MonoBehaviour
                 triangles = new List<int>();
                 mesh = new Mesh();
 
+                UVs2 = new List<Vector2>();
+                colours = new List<Color>();
+
                 Initialized = true;
             }
             else //Clears the lists if already initialized
             {
                 vertices.Clear();
                 UVs.Clear();
+                UVs2.Clear();
+                colours.Clear();
                 triangles.Clear();
                 mesh.Clear();
 
@@ -162,8 +194,13 @@ public class Container : MonoBehaviour
 
         public void UploadMesh(bool sharedVertices = false)
         {
+            mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32; //Set index format to Unsigned Int 32 (go past 65k vertice limit)
+
             mesh.SetVertices(vertices); //Set mesh vertices to vertices created
             mesh.SetUVs(0,UVs);
+            mesh.SetUVs(2, UVs2); //second channel with UVs2
+
+            mesh.SetColors(colours);
             mesh.SetTriangles(triangles, 0, false); //Set mesh triangle to triangles created
 
             mesh.Optimize();
